@@ -50,11 +50,12 @@ def find_on_wall(what_find):
     поиск по постам группы
     :param what_find: текст для ввода в поисковую строку
     """
-    find_button = driver.find_element_by_xpath('//a[contains(@class, "tab_search")]')
+    find_button = driver.find_element_by_xpath('//a[contains(@class, "ui_tab_search")]')
+    time.sleep(PAUSE_TIME)
     find_button.click()
     time.sleep(PAUSE_TIME)
     find_field = driver.find_element_by_id("wall_search")
-    find_field.click()
+    # find_field.click()
     time.sleep(PAUSE_TIME)
     find_field.send_keys(what_find + Keys.ENTER)
     print('Поиск по постам завершен!')
@@ -68,7 +69,14 @@ def scroll_page(limit):
     html = driver.find_element_by_tag_name('html')
     for _ in range(limit):
         time.sleep(PAUSE_TIME)
-        html.send_keys(Keys.END)
+        try:
+            close_button = driver.find_element_by_xpath('//a[contains(@class, "JoinForm__notNow")]')
+            if close_button:
+                close_button.click()
+        except Exception as e:
+            print(e)
+        finally:
+            html.send_keys(Keys.END)
     print(f'Готово!')
 
 
@@ -78,24 +86,21 @@ def scroll_page_unlim():
     """
     last_height = driver.execute_script("return document.body.scrollHeight")
     while True:
-    # for _ in range(10):
-        driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
         time.sleep(PAUSE_TIME)
-        new_height = driver.execute_script("return document.body.scrollHeight")
-        if new_height == last_height:
-            break
-        last_height = new_height
+        try:
+            close_button = driver.find_element_by_xpath('//a[contains(@class, "JoinForm__notNow")]')
+            if close_button:
+                close_button.click()
+        except Exception as e:
+            print(e)
+        finally:
+            driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+            time.sleep(PAUSE_TIME)
+            new_height = driver.execute_script("return document.body.scrollHeight")
+            if new_height == last_height:
+                break
+            last_height = new_height
     print(f'Готово!')
-
-
-def close_join_form():
-    """
-    закрытие всплывающего окна "Не сейчас"
-    """
-    if driver.find_element_by_xpath('//a[contains(@class, "JoinForm__notNow")]'):
-        driver.find_element_by_xpath('//a[contains(@class, "JoinForm__notNow")]').click()
-    else:
-        print('Не нашел кнопку "Не сейчас"')
 
 
 def get_posts_info():
@@ -110,24 +115,27 @@ def get_posts_info():
             info["date"] = item.find_element_by_xpath('.//span[contains(@class,"rel_date")]').text
             info["likes"] = item.find_element_by_xpath('.//a[contains(@class, "like_btn like _like")]//div[contains(@class, "like_button_count")]').text
             info["shares"] = item.find_element_by_xpath('.//a[contains(@class, "like_btn share _share")]//div[contains(@class, "like_button_count")]').text
-            info["views"] = item.find_element_by_xpath('.//div[contains(@class, "like_views _views")]').text
+            info["views"] = item.find_element_by_xpath('.//div[contains(@class, "_views")]').text
         except Exception as e:
             print(e)
         pprint(info)
-        if info["text"] != '':
-            info_items.append(info)
+        try:
+            if info["text"]:
+                info_items.append(info)
+        except Exception as e:
+            print(e)
         time.sleep(PAUSE_TIME)
     return info_items
 
 
 if __name__ == '__main__':
+    html = driver.find_element_by_tag_name('html')
+    html.send_keys(Keys.ARROW_DOWN + Keys.ARROW_DOWN + Keys.ARROW_DOWN)
     # find_on_wall(some_text)
-    time.sleep(PAUSE_TIME)
+    # time.sleep(PAUSE_TIME)
     scroll_page(5)
     # scroll_page_unlim()
-    time.sleep(PAUSE_TIME)
-    close_join_form()
-    time.sleep(PAUSE_TIME)
+    # time.sleep(PAUSE_TIME)
     posts_info = get_posts_info()
     time.sleep(PAUSE_TIME)
     driver.quit()
